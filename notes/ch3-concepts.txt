@@ -1,0 +1,12 @@
+ch-3 concepts
+1.program counter
+2.process stack
+3.processor registers
+4.virtual processor
+5.virtual memory
+6. object reuse and cache  coloring - ch12 
+7. !!! memory barrier on SMP's
+8.user address space vs kernel address space of a process.
+9. memory mappings
+10.instruction pointer
+11.page tables - COW

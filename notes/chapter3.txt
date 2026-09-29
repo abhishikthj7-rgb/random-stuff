@@ -1,0 +1,190 @@
+1.relationship between processes and threads.
+2.how Linux stores and represents processes (with task_struct and thread_info)
+3.how processes are created (via fork() and ultimately clone()),
+4.how new executable images are loaded into address spaces (via the exec()family of system calls)
+5.the hierarchy of processes, how parents glean information abouttheir deceased children (via the wait() family of system calls),
+6.how processes ulti-mately die (forcefully or intentionally via exit())
+
+
+### resources a process contains :
+0.code/text section
+1.open files
+2.pending signals
+3.internal kernel data
+4.processor state
+5.memory address space (with one or more memory mappings)
+6.threads
+7.data section
+
+### thread contents
+threads : objects of activity within a process
+1. program counter
+2. process stack
+3. processor registers
+
+1. in unix, each process consists of one thread
+2. multithreaded apps/programs have more than one thread
+## 3. linux does not differentiate between threads and process, to it a thread is just a special kind of process
+
+two types of virtualization for a process :
+1.virtual processor : gives process the illusion that it alone manges the system
+2.virtual memory : gives process the illusion that it alone owned all the memory
+
+## threads share virtual memory but have their own virtualized processor
+
+1. a process is an active state of a program and its resources
+
+
+### fork()
+1.The parent resumes execution and the child starts execution at the same place: where the call
+to fork() returns.
+2.The parent resumes execution and the child starts execution at the same place: where the call
+to fork() returns.
+3.Immediately after a fork it is desirable to execute a new, different program.The
+exec() family of function calls creates a new address space(user adress space, which is virtual : text, data, stack, heap) and loads a new program into
+it.
+
+
+### process descriptor : struct task_struct
+
+1.The kernel stores the list of processes in a circular doubly linked list called the task list.2
+Each element in the task list is a process descriptor of the type struct task_struct,
+2.defined in linux/sched.h
+3. size : around 1.7 kilobytes on a 32-bit
+machine.
+4.The task_struct structure is allocated via the slab allocator
+5.Prior to the 2.6 kernel series, struct task_struct was stored at the end of the kernel stack of each process
+6.This allowed the architectures like the x86 , to calculate the location of the process descriptor via the stack pointer instead of using a register to save the address.
+7.With the process descriptor dynamically created via the slab allocator, a new structure, struct thread_info, was created that again lives at the bottom of the stack (for stacks that grow down) and at the top of the stack (for stacks that grow up).
+8. struct thread_info is defined in arch/microblaze/include/asm/thread_info.h
+9. struct thread info in turn points to struct task_struct process descriptor.
+
+### storing process descriptor
+1. Identified via PID which is of the opaque type pid_t , which is an int which is stored inside each process descriptor.
+2. Maximum value is usually 32,768 (that of a short int), but can be increased to 4 million via <linux/threads.h>. if max limit is low , pid's may wrap around 
+3.if the system is willing to break compatibility with old applications, the administrator may increase the maximum value via /proc/sys/kernel/pid_max
+4.via the current macro(pointer), process descriptor for the currently executing task is obtained
+5.the **current macro** must be implemented independently by each architecture.
+6.some architectures save the pointer to the task_struct structure of the currently running process in a register , enabling for efficient access
+
+### how x86 handles current macro 
+1.current is calculated by masking out the 13 least-significant bits of the stack
+pointer to obtain the thread_info structure.
+2. this is done via current_thread_info() function (defined in include/linux/thread_info.h)
+3. 13 bits are masked since kernel stack is usually 8kb( 2^13). When 4kb stacks are used, 4096 (2^12) is used instead of 8192.
+4. kernel stack size is mostly architecture dependent but sometimes be controlled via kernel configuration.
+5. current dereferences the task member of thread_info to return thetask_struct: current_thread_info()->task;
+ex for register based access : PPC
+
+### process state
+a process can only exist in one of these five states at a time
+1.TASK_RUNNING—The process is runnable; it is either currently running or on a run-nqueue waiting to run.
+2.TASK_INTERRUPTIBLE- sleeping/blocked, waiting for some condition to exists. once condition is met, kernel sets it TASK_RUNNING. sometimes becomes runnable when it receives a signal.
+3.TASK_UNINTERRUPTIBLE - does not wake up/ become runnable once it receives a signal and waits for a specific event. used when task should wait without interruption or when an event is expected to occur quickly.
+4.TASK_TRACED - when traced by a debugger via ptrace.
+
+5.TASK_STOPPED - task is not running/ not eligible to run. occurs when task receives signals like these : SIGSTOP, SIGTSTP, SIGTTIN, or
+SIGTTOU signal or if it receives any signal while it is being debugged.
+
+6. while a process is being traced by a debugger and the process receives a signal in the middle , the process is stopped. the debugger then decides what to do next.
+flow :
+Process RUNNING ==> Signal arrives ==> Process STOPPED/TRACED ==> Debugger examines it ==>Debugger says "continue" / handles the signal ==> Process RUNNING again
+
+7. kernel code can change a process's state via : 
+set_task_state(task, state);  kernel/sched/ext.c available as scx_set_task_state
+scx = scheduler class extensions
+
+8.set_current_state(state), defined in linux/sched.h sets the state of the currently executing process, not some process/task in the runqueue.
+
+9. NOTE : by address space, it usually means : text, data, stack, heap.
+
+### process context
+1.When a program executes a system call or triggers an exception, it enters kernel-space.At this point, the kernel is said to be “executing on behalf of the process” and is in process context.
+2.the current macro is VALID when executing in process context.
+3.Upon exiting the kernel, the process resumes execution in user-space.
+4.System calls and exception handlers are well-defined interfaces into the kernel.A
+process can begin executing in kernel-space only through one of these interfaces
+5.ALL access to the kernel are through these interfaces
+
+
+### process family tree
+
+1.All processes are descendants of the init process, whose PID is one.
+2.The kernel starts init in the last step of the boot process.
+3.The init process, in turn, reads the system initscripts and executes more programs, eventually completing the boot process.
+4.Every process on the system has exactly one parent. 
+5.Every process has zero or more children.
+6.it is possible to obtain the process descriptor of its parent with the following code:
+struct task_struct *my_parent = current->parent;
+
+7.Similarly, it is possible to iterate over a process’s children with
+struct task_struct *task;
+struct list_head *list;
+list_for_each(list, &current->children) {
+task = list_entry(list, struct task_struct, sibling);
+/* task now points to one of current’s children */
+}
+FIRST argument : variable used to walk through the list 
+SECOND argument : the type of the larger structure in which the first argument/list node is present.the second argument is passed so that the list_entry knows what type of structure it should give back.
+THIRD argument : the variable we are trying to obtain inside the structure.
+
+8.The init task’s process descriptor is statically allocated as init_task
+struct task_struct *task;
+for (task = current; task != &init_task; task = task->parent)
+;
+/* task now points to init */
+
+9.because the task list is a circular, doubly linked list.To obtain the next task in
+the list, given any valid task, use
+list_entry(task->tasks.next, struct task_struct, tasks)
+Obtaining the previous task works the same way:
+list_entry(task->tasks.prev, struct task_struct, tasks)
+
+10. the above two routines are provided by the macros next_task(task) (include/linux/sched/signal.h) and prev_task(task)
+
+11. the macro for_each_process(task) is provided,
+which iterates over the entire task list. On each iteration, task points to the next task in
+the list:
+struct task_struct *task;
+for_each_process(task) {
+/* this pointlessly prints the name and PID of each task */
+printk(“%s[%d]\n”, task->comm, task->pid);
+}
+
+12. NOTE : It is expensive to iterate over every task in a system with many processes; code should have good reason (and no alternative) before doing so.
+
+
+### process creation
+
+1.Most operating systems implement a spawn mechanism to create a new process
+2.In linux, process creation is done using fork() and exec()
+3.first, fork(), creates a child process that is a copy of the current task. (IMP!!!:what does a copy mean here ?)
+4.It differs from the parent only in its PID
+5.PPID (parent’s PID, which is set to the original process)
+6.The second function, exec(), loads a new executable into the address space and begins executing it.
+7. ex :
+Child calls exec()
+Suppose the child does:
+
+execve("/bin/ls", ...);
+
+Linux essentially:
+Tears down the child's old memory mappings, Loads the new executable (ls).
+Creates new memory mappings for:
+ls's code
+ls's data
+new stack
+heap / other regions as needed
+Sets the instruction pointer to the new program's entry point.
+
+### COPY on WRITE
+1. When all resources owned by the parent are duplicated and the
+copy is given to the child it could have been shared instead.
+2.if the new process were to immediately execute a new image, all that copying would go to waste.
+3.Copy-on-write (or COW) is a technique to delay or altogether prevent copying of the data.
+4.Rather than duplicate the process address space, the parent and the child can share a single copy. ( virtual memory adresses pointing to the same physical copy ).
+5.if that address space is written to, a duplicate is made and each process receives a unique copy. until then they are SHARED READ - ONLY.
+6.in case if exec() is called immediately after fork()—they never need to be copied.
+7.The ONLY overhead incurred by fork() is the duplication of the parent’s page tables
+and the creation of a unique process descriptor for the child.
+8.COW prevents the wasted copying of large amounts of data (with the address space, easily tens of megabytes per process)
