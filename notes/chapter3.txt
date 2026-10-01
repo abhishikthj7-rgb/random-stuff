@@ -188,3 +188,29 @@ copy is given to the child it could have been shared instead.
 7.The ONLY overhead incurred by fork() is the duplication of the parent’s page tables
 and the creation of a unique process descriptor for the child.
 8.COW prevents the wasted copying of large amounts of data (with the address space, easily tens of megabytes per process)
+
+
+### fork()
+
+1.defined in kernel/fork.c as: 2852:SYSCALL_DEFINE0(fork)
+2. in kernel 2.6, fork was implemented using the clone system call, in latest source tree the flow is : fork -> kernel_clone -> copy_process
+3.SYSCALL_DEFINE0(fork)
+{
+#ifdef CONFIG_MMU
+        struct kernel_clone_args args = {
+                .exit_signal = SIGCHLD,
+        };
+
+        return kernel_clone(&args);
+#else
+        /* can not support in nommu mode */
+        return -EINVAL;
+#endif
+}
+#endif
+
+4.NOTE : SYSCALL_DEFINE is a standard way of the linux kernel to define system calls. the number next to the macro defines the number of arguments the function takes.
+5. Inside the parantheses of the macro, the arguments are given in pairs of argument type and argument name.
+6.so for a system call with two arguments, i.e SYSCALL_DEFINE2, inside parantheses, well have two pairs of argument type and name.
+
+
