@@ -1,0 +1,44 @@
+1.Threads enable concurrent programming and parallelism on multiprocessor systems.
+2.To the Linux kernel, there is no concept of a thread, linux implements all threads as a standard process.
+3.It is just a process that shares resources(like address space) with other processes.
+4.This approach contradicts with other operating systems, which treat threads as "lightweight process".
+5.On systems with explicit thread support, one process descriptor might exist that,
+in turn, points to the four different threads
+6.in Linux, there are simply four processes and thus four
+normal task_struct structures.The four processes are set up to share certain resources.
+The result is quite elegant.
+
+### creating threads
+1.Threads are created the same as normal tasks with the only difference being the clone system call is passed flags corresponding to the specific resources to be shared.
+clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND, 0);
+
+normal fork : clone(SIGCHLD, 0);
+
+2.The new task and its parent are what are popularly called threads.
+
+reference : 
+forks's clone in 2.6 kernel:
+clone(SIGCHLD, 0);
+
+in latest : 
+        struct kernel_clone_args args = {
+                .exit_signal = SIGCHLD,
+        };
+        
+        return kernel_clone(&args);
+ 
+ vfork's clone in 2.6:
+ clone(CLONE_VFORK | CLONE_VM | SIGCHLD, 0);
+ 
+ in latest :
+         struct kernel_clone_args args = {
+                .flags          = CLONE_VFORK | CLONE_VM,
+                .exit_signal    = SIGCHLD,
+        };
+
+        return kernel_clone(&args);
+
+ 
+ 
+ 
+

@@ -213,4 +213,24 @@ and the creation of a unique process descriptor for the child.
 5. Inside the parantheses of the macro, the arguments are given in pairs of argument type and argument name.
 6.so for a system call with two arguments, i.e SYSCALL_DEFINE2, inside parantheses, well have two pairs of argument type and name.
 
+### Kernel_clone
 
+1.Creates a new task by calling the copy_process.
+p = copy_process(NULL, trace, NUMA_NO_NODE, args);
+
+2.Get the child task's PID
+pid = get_task_pid(p, PIDTYPE_PID);
+nr = pid_vnr(pid);
+
+3.Make the new task runnable 
+wake_up_new_task(p);
+
+4.Return the childs PID
+return nr;
+
+### vfork()
+
+1.same as fork but the page table entries of the parent process are not copied
+2.child executes as the sole thread in the parents address space
+3.parent is blocked until child calls exec() or exits
+4.child is not allowed to write to the address space

@@ -12,3 +12,4 @@ ch-3 concepts
 11.page tables - COW
 12.kernel annotation ex : __user
 13.Macros
+14.page table entries 
