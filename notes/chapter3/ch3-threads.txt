@@ -39,6 +39,11 @@ in latest :
         return kernel_clone(&args);
 
  
- 
+ ### kernel threads
+ 1.standard processes that exist solely in the kernel space.
+ 2. They DONT have an address space like normal processes.
+ 3. Their mm pointer which points to the address space is set to null.
+ 4. Kernel thread can be created only by another kernel thread.
+ 5. All new kernel threads for the first time are forked off of the kthread kernel process.
  
 
