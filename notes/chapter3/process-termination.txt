@@ -1,0 +1,55 @@
+### Process termination
+1.When a process terminates, the kernel releases the resources owned by the process and notifies the child’s parent of its demise.
+2.Process destruction is usually SELF INDUCED by exit() system call.
+3.A process can TERMINATE INVOLUNTARILY when it receives a signal or an exception.
+4.Process termination is mainly handled by do_exit(), defined in kernel/exit.c
+
+### do_exit() (kernel/exit.c)
+1.it calls the exit_mm() (defined in kernel/exit.c) to "release" the mm_struct held by this process, thus freeing the address space.
+2.if no other process is using the address space/address space is not shared, the kernel destroys the address space.
+3.if in case the process is queued waiting for an IPC semaphore, it is dequeued when do_exit calls exit_sem().
+4.it also calls exit_files() and exit_fs to decrement the usage count of objects related to file descriptors and file system data.
+5.the object is destroyed if either of the above counts reach zero.
+6.it sets the exit_code member of the task_struct to the code provided by the exit() funtion or of the mechanism that forced the termination.
+7.it then calls exit_notify to send signals to the task's parent, reparents any of the task's children to another thread in their thread group or the init process and sets the exit_state in the task_struct to EXIT_ZOMBIE.
+8.do_exit finally calls the schedule() to switch to a new process. since the task/process is now not schedulable, this will be the final piece of code that it will ever execute and do_exit() never returns.
+9.The task is not runnable (and no longer has an address space in which to run)
+and is in the EXIT_ZOMBIE exit state.
+10.The ONLY MEMORY IT OCCUPIES NOW is its kernel stack, the
+thread_info structure, and the task_struct structure.The task exists solely to provide
+information to its parent.
+11.After parent retrieves information/ notifies the kernel that it is not interested, remaining memory held by the process is freed and returned to the system for reuse.
+
+### Removing process descriptor after process termination
+1.After do_exit() completes, the process descriptor for the terminated process still exists,
+but the process is a zombie and is unable to run.
+2.The acts of cleaning up in a process termination via do_exit() and removing its process descriptor are separate.
+3.refer point 11 from the previous section. the child's task_struct is deallocated by wait family of functions. (kernel/exit.c).
+4.the wait functions behavior is to suspend execution of the calling task until one
+of its children exits, at which time the function returns with the PID of the exited child.
+5.a pointer is also provided to the wait that on return holds the exit code of the terminated child.
+6.wait calls the release_task(kernel/exit.c) to deallocate the process descriptor.
+7.If the task was the last member of a thread group, and the leader is a zombie, then
+release_task() notifies the zombie leader’s parent.
+8.release_task() calls put_task_struct() to FREE THE PAGES containing the
+process’s kernel stack and thread_info structure and deallocate the slab cache con-
+taining the task_struct.
+
+Include/linux/sched/task.h :129
+get_task_struct()
+        ↓
+reference count +1
+
+put_task_struct()
+        ↓
+reference count -1
+
+reference count == 0
+        ↓
+__put_task_struct()
+        ↓
+free task_struct
+9.At this point, the process descriptor and ALL RESOURCES related to the process are freed.
+
+
+

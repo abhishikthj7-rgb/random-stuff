@@ -13,4 +13,11 @@ ch-3 concepts
 12.kernel annotation ex : __user
 13.Macros
 14.page table entries 
-15. threads vs kernel threads 
+15. threads vs kernel threads
+16. kernel objects
+17.thread group, leader, zombie etc...
+18.slab cache
+19.what happens when a parentless task is not reparented ?
+20.children, sibling, group leader.
+21.ptrace child list.
+22. what is the overhead of stray zombie processes ?

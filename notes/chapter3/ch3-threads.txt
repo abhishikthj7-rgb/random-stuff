@@ -46,4 +46,16 @@ in latest :
  4. Kernel thread can be created only by another kernel thread.
  5. All new kernel threads for the first time are forked off of the kthread kernel process.
  
+### kernel thread creation flow :
+1.Kernel component calls kthread_create().
+2.kthread_create() sends a creation request to kthreadd.
+3.kthreadd creates the new kernel thread.
+4.kthread_create() returns a struct task_struct * pointing to the new thread.
+5.The caller invokes wake_up_process() with that pointer to let the thread run.
 
+struct task_struct *task;
+
+task = kthread_create(my_thread, data, "my_thread");
+
+if (!IS_ERR(task))
+    wake_up_process(task);

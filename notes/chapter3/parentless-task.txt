@@ -1,0 +1,19 @@
+### reparenting
+
+1.parent exits before its children, some mechanism must exist to reparent any child tasks
+to a new process, or else parentless terminated processes would forever remain zombies,
+wasting system memory.
+2.The solution is to reparent a task’s children on exit to either
+another process in the current thread group or, if that fails, the init process.
+3.do_exit() calls ==> exit_notify(), which calls ===> forget_original_parent(), which, in turn, calls ==> find_new_reaper() to perform the reparenting. (ALL DEFINED IN kernel/exit.c).
+4.find_new_reper() attempts to find and return another task in the process’s thread group. If
+another task is not in the thread group, it finds and returns the init process. Now that a
+suitable new parent for the children is found, each child needs to be located and repar-
+ented to reaper:
+5.ptrace_exit_finish() is then called to do the same reparenting but to a list of
+ptraced children
+6.BEFORE 2.6 KERNEL verison when a parent exits, the kernel HAD TO LOOK FOR EVERY PROCESS IN THE SYSTEM SEARCHING FOR CHILDREN.
+7.now, In Linux's task_struct, the two lists are:
+children — the list of a task's child processes/threads that have it as their parent.
+ptraced — the list of tasks being traced by a debugger (for example, using ptrace).
+8.the search for one’s children from every process to just two relatively small lists.
