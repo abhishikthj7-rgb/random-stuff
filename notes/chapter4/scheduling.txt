@@ -1,0 +1,36 @@
+### scheduler
+
+1.The scheduler decides which processes run when and for how long.
+2.It divides the finite resource of the processor time between runnable processes on a system.
+
+### multitasking
+1.A multitasking operating system is one that can simultaneously interleave execution of more than one process.
+2.On single processor system this gives concurrency, which is an illusion of parallelism.
+3.On multiprocessor systems, actual parallelism is achieved.
+4.Multitasking comes in two flavors : COOPERATIVE and PREEMPTIVE multitasking.
+5.In preemptive multitasking, the scheduler decides when a process is to cease running and when a new process is to begin running.
+6.The act of involuntarily suspending a running process is called preemption.
+7.The time a process runs before it is preemtped is usually predetermined, which is called as the TIMESLICE of the process.
+8.The TIMESLICE gives each runnable process a slice of the processor's time.
+9.Timeslice is dynamically calculated as a function of process behavior and configurable system policy.
+10.In COOPERATIVE multitasking (windows 3.1, macOS 9 and older), the process will decide when to stop running.
+11.The act of a processor voluntarily suspending itself is called YIELDING.
+
+### why cooperative multitasking is not good
+1.The shortcomings of this approach are manifest:
+The scheduler cannot make global decisions regarding how long processes run.
+2.Processes can monopolize the processor for longer than the user desires.
+3.A HUNG process that never yields can potentially BRING DOWN THE ENTIRE SYSTEM.
+
+### linux's process scheduler
+1.Through 2.4 kernel series, linux scheduler was simple but scaled poorly wrt many runnable processes or many processors.
+2.During the 2.5 kernel development series, it received an overhaul with the O(1) scheduler.
+3.It introduced a CONSTANT-TIME ALGORITHM for timeslice calculation and per processor runqueues.
+4.This O(1) scheduler scaled effortlessly as linux supported large systems with hundreds of processors.
+5.However, it had many FAILURES related to scheduling latency sensitive applications.
+6.latency sensitve applications/INTERACTIVE RPOCESSES, include any application with which the user interacts.
+
+### shceduler frim 2.6 kernel series
+1.From the 2.6 kernel series, developers introduced the process schedulers that aimed at improving the interactive performance of the O(1) scheduler.
+2.The most notable of these was the ROTATING STAIRCASE DEADLINE scheduler, which introduced the concept of FAIR SCHEDULING, borrowed from QUEUING THEORY to linux's process scheduler.
+3.This concept was the inspiration for the replacement of O(1) scheduler in 2.6.23, the COMPLETELY FAIR SCHEDULER, or CFS.
