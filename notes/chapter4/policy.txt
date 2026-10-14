@@ -1,0 +1,16 @@
+### policy
+1.Policy is the behavior of the scheduler that decides what runs when.
+2.A scheduler's policy determines the OVERALL FEEL of a system and is responsible for optimally utilizing processor time.
+
+### types of processes
+
+### I/O bound processes
+1.spends much of its time SUBMITTING and waiting for I/O requests.
+2.Submitting : requesting an I/O operation from the operating system.
+3.such a process is runnable for only short durations, because it eventually
+blocks waiting on more I/O (keyboard, mouse input, network/disk I/O, GUI etc).
+
+### processor bound processes
+1.They spend much of the time executing code.
+2.They tend to run until they are preempted as they do not regularly block on IO requests very often.
+
