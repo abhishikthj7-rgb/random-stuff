@@ -1,0 +1,28 @@
+### priority based scheduling
+1.Ranking processes based on their WORTH and their need for processor time.
+2.The general idea is that processes with higher priority run before those with lower priority, whereas processes with same priority are scheduled ROUND ROBIN(one after the next, repeating).
+3.On many systems, processes with higher priority also receive a longer timeslice.
+4.The runnable processes with timeslice remaining and the highest priority process always run.
+5.BOTH the user and the system can set a process’s priority to influence the scheduling behavior of the system.
+
+### the two PRIORITY RANGES : nice value and real time priority
+
+### nice value
+1.Nice value is a number ranging from -20 to +19 with a default of 0.
+2.Larger nice values correspond to a lower priority. A process is being nice to other processes in the system.
+3.Processes with a lower nice value(higher priority) gets the larger proportion of the systems processor compared to  processes with a higher nice value.
+4.nice values are the standard priority range used in all the unix systems.
+5.but different unix systems apply them in different ways, reflective of their individual scheduling algorithms.
+ex: in MAC OS X nice value is the control over the absolute timeslice alloted to a process but in LINUX, it is the control over the proportion of the time slice.
+6.run this command to see processes and their nice values : ps -el.
+
+### Real time priority
+1.Values are configurable, but by default range from 0 to 99 inclusive.
+2.contrary to nice values, higher real time priority values correspond to greater priority.
+3."All real-time processes are at a higher priority than normal processes; that is, the real-time priority and nice value are in disjoint value spaces." 
+NICE values are used for NORMAL PROCESSES, REAL TIME values are used for REAL TIME PROCESSES.
+4.Linux implements real-time priorities in accordance with the relevant Unix standards, specifically POSIX.
+5.Use the below command to check the relt time priority:
+ps -eo state,uid,pid,ppid,rtprio,time,comm.
+
+NOTE : A value of “-” means the process is NOT REAL-TIME.

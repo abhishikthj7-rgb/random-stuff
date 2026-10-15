@@ -14,3 +14,14 @@ blocks waiting on more I/O (keyboard, mouse input, network/disk I/O, GUI etc).
 1.They spend much of the time executing code.
 2.They tend to run until they are preempted as they do not regularly block on IO requests very often.
 
+NOTE: above classification is not mutually exclusive. 
+eg:1.x window server which handles graphical display and input devices.
+2.word processor that waits for input but starts using the processor during spell checking.
+
+### two conflicting goals
+1.fast process response time / low latency.
+2.maximum system utilization / high throughput.
+
+1.schedulers employ complex algorithms to determine the most worthwhile process to run while NOT COMPROMISING FAIRNESS to the other low priority processes.
+2.the scheduler policy in UNIX SYSTEMS tend to EXPLICITLY FAVOUR I/O bound processes, thus providing good process response time.
+3.linux OPTIMIZES for process repsonsE, FAVOURING I/O bound processes over processor-bound processes without neglecting processor bound processes.
