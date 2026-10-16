@@ -1,0 +1,89 @@
+### scheduler classes
+1.linux scheduler is modular, enabling differnet modules to shcedule different types of processes, known as scheduler classes.
+2.They enable different types of pluggable algorithms to coexist, scheduling their own types of processes.
+3.Each scheduler class has a priority.
+4.The base scheduler code defined in kernel/sched/core.c, iterates over each scheduler class in order of priority.
+kernel/sched/
+│
+├── core.c          ← scheduler's core mechanisms
+├── fair.c          ← CFS/fair scheduling
+├── rt.c            ← real-time scheduling
+├── deadline.c      ← deadline scheduling
+5.The highest priority scheduler class with a runnable process WINS, selecting who runs NEXT.
+6.CFS is the REGISTERED SCHEDULER CLASS FOR NORMAL PROCESSES, called SCHED_NORMAL in linux and SCHED_OTHER in posix.
+
+NOTE:
+                  Workload
+              ┌───────────────┐
+              │               │
+           I/O-bound     Processor-bound
+              │               │
+              └───────┬───────┘
+                      │
+                can be either
+              normal or real-time
+              
+Classification	Question being asked
+Normal vs real-time	: What scheduling policy/priority class does this process use?
+I/O-bound vs processor-bound : What kind of workload does this process have?
+
+### problem 1 : process scheduling in unix systems
+1.MAPPING nice values onto timeslices requires a decision about what ABSOLUTE timeslice to allot to each nice value, leading to SUBOPTIMAL SWITCHING BEHAVIOR.
+
+ex:
+    1.lets assign the processes with the DEFAULT nice value(0) a timelsice of 100ms.
+    2.lets assign process with the highest nice value(20, lowest priority) a timeslice of 5ms.
+    3.lets assume one of EACH of these processes is runnnable.
+    4.the default priority process receives(20/21) 100 out of 105 milliseconds.
+    5.the process with higher nice value will get (1/21) 5 out of 105 ms.
+    6.now when TWO LOW PRIORITY processes are run, they recieve 50% of the processor, but they use the processor for only 5 milliseconds at a time.
+    7.!!! instead of context switching twice every 105 milliseconds, we now context switch TWICE EVERY 10 MILLISECONDS which is UNNECESSARILY VERY FREQUENT.
+    8.conversely, for two normal priority processes, the context switch is twice EVERY 200 MILLISECONDS.
+    
+2.with the above example, if high nice value (low priority) processes tend to be background, processor-intensive tasks, while normal priority processes tend to be foreground user tasks, this timeslice allotment is exactly backward from ideal!.
+
+### problem 2 : relative nice value mapping
+1.consider two processes, each a single nice value apart at nice values 0 and 1.
+2.This might map (and indeed did in the O(1) scheduler) to timeslices of 100 and 95 milliseconds, respectively.
+3.the two values are nearly identical and the difference between a single nice value is small.
+4.lets assume two processes are at nice values 18 and 19 which map to the timeslices of 10 and 5 milliseconds.
+5.even if the processes are one nice value apart, the former process receives twice the processor time compared to the latter.
+6.nice values are used in relative terms in the nice() system call accessed via <unistd.h>
+
+### problem 3 : timer tick
+1.But how does the kernel measure time accurately enough to implement these timeslices?
+That's where the timer tick comes in.
+2.A timer tick is a periodic timing event used by the kernel to keep track of time and perform time-related work.
+3.ex : lets say a timer generates one tick every 10 milliseconds, That means it can represent timeslices such as:
+- 10 ms
+- 20 ms
+- 30 ms
+- 40 ms
+But not 15 ms,
+  Problem 1: The minimum timeslice has a floor
+        The word floor means a lower limit.
+        If the timer tick is 10 ms and timeslices must be whole multiples of the tick, the smallest possible timeslice is 10 ms.
+        You cannot assign a timeslice of 5 ms under that assumption.
+  problem 2: Successive nice values might have timeslices too close together
+        Suppose the timer tick is 10 ms.
+        You want to map consecutive nice values like this:
+        Nice value	Desired timeslice
+            0	25 ms
+            1	24 ms
+            2	23 ms
+        But if timeslices must be multiples of 10 ms, these values cannot all be represented.
+  problem 3 : Finally, timeslices change with different timer ticks, scheduler must be independent of these.
+  
+### problem 4 : handling process wake up in a priority-based scheduler that wants to optimize for interactive tasks.
+1.freshly woken-up tasks are given a priority boost by allowing them to run immediately, even if their timeslice was expired.
+2.even if it improves interactive performance, it can make the scheduler provide one process an unfair amount of procesor time at the expense of the rest of the system.
+
+### solutions
+1.making nice values geometric instead of additive solves the problem 2.
+2.mapping nice values to timeslices using a measurement decoupled from the timer tick solves problem 3.
+3.such solutions belie the true problem, which is that assigning absolute timeslices yields a CONSTANT
+SWITCHING RATE BUT VARIABLE FAIRNESS.
+4.The approach taken by CFS is a RADICAL (for process
+schedulers) rethinking of timeslice allotment: DO AWAY WITH TIMESLICES COMPLETELY and
+assign each process a PROPORTION of the processor. CFS thus YIELDS CONSTANT FAIRNESS BUT A
+VARIABLE SWITCHING RATE.

@@ -1,0 +1,18 @@
+### scheduling policy in action
+1.Consider two processes : a text editor and a video encoder.
+2.The text editor id I/O bound as it spends nearly all its time waiting for the user key presses.
+3.The video encoder spends all its time applying video codec to the raw data.
+4.The scheduler gives the text editor a larger proportion of the available processor than the video encoder, since it is interactive.
+5.This is not because the text editor needs a lot of processing power, but because we want it to always have the processor time available the moment it needs it.
+6.On OS's, this is done by giving the text editor a higher priority and larger timeslice than the video encoder by detecting the text editor is interactive.
+7.in LINUX, If the video encoder and text editor are the only running processes and both are at the same nice level, this proportion would be 50%—each would be guaranteed half of the processor’s time.
+8.since the text editor spends most of its time waiting for user input, i.e. key press, it does not use anywhere near 50% of the processor. Conversely, the video encoder is allowed to use more than its allotted 50%, to finish its execution quickly.
+
+NOTE : BY 100% PROCESSOR TIME, IT MEANS TIME IT HAS AVAIABLE TO DISTRIBUTE, among the total distributable time available.
+
+### what happens when the text editor wakes up
+1.CFS notes that it is allotted 50% of the processor but has used considerably less.
+2.Specifically, CFS determines that the text editor has run for less time than the video encoder.
+3.Attempting to give all processes a fair share of the processor, it then preempts the video encoder and enables the text editor to run.
+4.The text editor runs, quickly processes the
+user’s key press, and again sleeps, waiting for more input.

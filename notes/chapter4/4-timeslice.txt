@@ -1,0 +1,24 @@
+### time slice
+1.It is a numeric value that represents how long a task can run before it is preempted.
+2.The scheduler policy must dictate a default timeslice, keeping in mind that :
+3.if the timeslice is too long, the system will have poor interactive performance, the system will no longer feel as if multiple applications a re concurrently executed.
+4.if the timeslice is too short, much of the processor time is wasted between switching from one process with a short timeslice to the next.
+5.I/O bound processes do not need longer timeslices compared to processor bound processes that need longer timelsices. These two are CONFLICTING GOALS that the scheduling policy must handle.
+6.in many OS's the default timeslice is low, say 10 milliseconds.
+
+NOTE : shorter timeslices result in frequent change of values stored in the cache as well corresponding to the processes.
+
+### CFS
+1.it does not directly assign timeslices to the processes.
+2.it assigns processes, PROPORTION(%) OF THE PROCESSOR.
+3.In linux, the amount of PROCESSOR TIME a process receives is a FUNCTION of the load of the system.
+4.That alos in term gets affected by each processor's nice value.
+5.The nice value acts as a WEIGHT, changing the proportion of the processor time each process receives. 
+6.Processes with higher nice values (a lower priority) receive a DEFLATIONARY WEIGHT, yielding them a smaller
+proportion of the processor; 
+7.processes with smaller nice values (a higher priority) receive an INFLATIONARY WEIGHT, netting them a larger proportion of the processor.
+8.In most operating systems, whether the process
+runs immediately, preempting the currently running process, is a FUNCTION of the process’s priority and available timeslice.
+9.In CFS the decision is a FUNCTION of how much of a proportion of the processor the newly runnable processor has consumed.
+10.If it has consumed a SMALLER PROPORTION of the processor than the currently executing process, it RUNS IMMEDIATELY, preempting the current process. If not, it is scheduled to run at a later time.
+
